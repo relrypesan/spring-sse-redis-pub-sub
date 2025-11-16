@@ -1,0 +1,47 @@
+services:
+  haproxy:
+    image: haproxy:2.9
+    ports:
+      - "8080:8080"
+    depends_on:
+      - app
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    networks:
+      - cluster
+
+  app:
+    build: ./app
+    environment:
+      - SERVER_PORT=8080
+    depends_on:
+      - redis
+    networks:
+      - cluster
+    deploy:
+      replicas: 5
+
+  redis:
+    image: redis:7.2
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - cluster
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
+    networks:
+      - cluster
+
+volumes:
+  redis_data:
+
+networks:
+  cluster:
